@@ -7,6 +7,8 @@ This is a [Workflow Step](http://rundeck.org/docs/developer/workflow-step-plugin
 
 Rundeck is a popular and well established automation tool. It features, besides other things, a rich customizable UI, role-based access control, scheduling, logging, alerts, cli and API support and an already extensive plugin ecosystem. It fits well into the CI/CD pipelines (for instance, there is a [Jenkins](http://rundeck.org/plugins/2013/01/01/jenkins-rundeck.html) Rundeck integration plugin). Rundeck itself [does not](http://rundeck.org/docs/administration/scaling-rundeck.html) lend itself easily to running in HA mode or scaling worker nodes. Therefore, it seems a good idea put a distributed scheduler such as Nomad behind it to offload resource-intensive jobs.
 
+![Alt Screenshot](https://raw.githubusercontent.com/ValFadeev/rundeck-nomad-plugin/master/images/job.jpg "Rundeck Nomad plugin")
+
 ## Installation
   * Download and start [Rundeck](http://rundeck.org/downloads.html). It will automatically create the necessary directories.
   * Clone this repository. Test and build using `gradle` wrapper:
@@ -31,6 +33,8 @@ Nomad supports a range of [Drivers](https://www.nomadproject.io/docs/drivers/ind
 Monitoring of the running jobs is performed in several stages the outcome of which is reported in the log output. Please consult [Nomad documentation](https://www.nomadproject.io/docs/internals/scheduling.html) for the relevant terminology. First it is checked if the job has been successfully submitted to the scheduler. Then it is verified if the job passed the evaluation (evaluation ID is reported). Depending on the desired task count the corresponding number of allocations will be placed by Nomad. Some or all of the allocations may fail for various reasons (resource limitations, driver error, etc), however, the job as a whole can only have _pending_, _running_ or _dead_ status which may not be representative of the success/failure of the outcome. Hence, in order to allow for some flexibility, we poll for the status of the individual allocations and raise an error if more than a configurable percentage of them end up in a _failed_ status.
 
 Note that logs from individual tasks are not streamed here. Given the arbitrary number of task instances that can be deployed it could be challenging to read all of their streams into Rundeck output. Some support for that may be added in future.
+
+![Alt Screenshot](https://raw.githubusercontent.com/ValFadeev/rundeck-nomad-plugin/master/images/log.jpg "Log output")
 
 ## Adding a new driver
 To add support for a new task driver, for example `jar` driver, follow these steps
