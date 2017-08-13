@@ -7,7 +7,7 @@ This is a [Workflow Step](http://rundeck.org/docs/developer/workflow-step-plugin
 
 Rundeck is a popular and well established automation tool. It features, besides other things, a rich customizable UI, role-based access control, scheduling, logging, alerts, cli and API support and an already extensive plugin ecosystem. It fits well into the CI/CD pipelines (for instance, there is a [Jenkins](http://rundeck.org/plugins/2013/01/01/jenkins-rundeck.html) Rundeck integration plugin). Rundeck itself [does not](http://rundeck.org/docs/administration/scaling-rundeck.html) lend itself easily to running in HA mode or scaling worker nodes. Therefore, it seems a good idea put a distributed scheduler such as Nomad behind it to offload resource-intensive jobs.
 
-![Alt Screenshot](https://raw.githubusercontent.com/ValFadeev/rundeck-nomad-plugin/master/images/job.jpg "Rundeck Nomad plugin")
+![Alt Screenshot](/images/job.jpg)
 
 ## Installation
   * Download and start [Rundeck](http://rundeck.org/downloads.html). It will automatically create the necessary directories.
@@ -34,7 +34,7 @@ Monitoring of the running jobs is performed in several stages the outcome of whi
 
 Note that logs from individual tasks are not streamed here. Given the arbitrary number of task instances that can be deployed it could be challenging to read all of their streams into Rundeck output. Some support for that may be added in future.
 
-![Alt Screenshot](https://raw.githubusercontent.com/ValFadeev/rundeck-nomad-plugin/master/images/log.jpg "Log output")
+![Alt Screenshot](/images/log.jpg)
 
 ## Adding a new driver
 To add support for a new task driver, for example `jar` driver, follow these steps
