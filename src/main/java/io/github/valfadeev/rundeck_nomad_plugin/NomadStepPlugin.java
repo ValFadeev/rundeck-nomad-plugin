@@ -44,11 +44,8 @@ public abstract class NomadStepPlugin implements StepPlugin, Describable {
     private static final String TASK_GROUP_RUNDECK = "rundeck";
 
     private final String driverName = this.getClass().getAnnotation(Driver.class).name();
-
     private final String serviceProviderName = this.getClass().getAnnotation(Plugin.class).name();
-
     private final String title = this.getClass().getAnnotation(PluginDescription.class).title();
-
     private final String description = this.getClass().getAnnotation(PluginDescription.class).description();
 
     public Description getDescription() {
@@ -162,7 +159,7 @@ public abstract class NomadStepPlugin implements StepPlugin, Describable {
         logger.log(2, String.format("Waiting for evauation %s to complete...", evalId));
         try {
             eval = evaluationsApi
-                    .pollForCompletion(evalId, WaitStrategy.waitForSeconds(1))
+                    .pollForCompletion(evalId, WaitStrategy.WAIT_INDEFINITELY) // timeout should be set in Rundeck
                     .getValue();
         } catch (NomadException|IOException e) {
             throw new StepException(
