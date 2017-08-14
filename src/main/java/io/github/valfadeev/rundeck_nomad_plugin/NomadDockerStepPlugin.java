@@ -11,11 +11,11 @@ import io.github.valfadeev.rundeck_nomad_plugin.common.Driver;
 import static io.github.valfadeev.rundeck_nomad_plugin.common.SupportedDrivers.DOCKER;
 
 
-@Driver(name=DOCKER)
+@Driver(name = DOCKER)
 @Plugin(name = NomadDockerStepPlugin.SERVICE_PROVIDER_NAME,
         service = ServiceNameConstants.WorkflowStep)
 @PluginDescription(title = "Run Docker container on Nomad",
-        description = "Submits a Nomad job running a Docker container")
+                   description = "Submits a Nomad job running a Docker container")
 public class NomadDockerStepPlugin extends NomadStepPlugin implements StepPlugin, Describable {
 
     public static final String SERVICE_PROVIDER_NAME
