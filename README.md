@@ -32,18 +32,11 @@ Nomad supports a range of [Drivers](https://www.nomadproject.io/docs/drivers/ind
 ## Job lifecycle
 Monitoring of the running jobs is performed in several stages the outcome of which is reported in the log output. Please consult [Nomad documentation](https://www.nomadproject.io/docs/internals/scheduling.html) for the relevant terminology. First it is checked if the job has been successfully submitted to the scheduler. Then it is verified if the job passed the evaluation (evaluation ID is reported). Depending on the desired task count the corresponding number of allocations will be placed by Nomad. Some or all of the allocations may fail for various reasons (resource limitations, driver error, etc), however, the job as a whole can only have _pending_, _running_ or _dead_ status which may not be representative of the success/failure of the outcome. Hence, in order to allow for some flexibility, we poll for the status of the individual allocations and raise an error if more than a configurable percentage of them end up in a _failed_ status.
 
-Note that logs from individual tasks are not streamed here. Given the arbitrary number of task instances that can be deployed it could be challenging to read all of their streams into Rundeck output. Some support for that may be added in future.
+Note that logs from individual tasks are *not* streamed here. Given the arbitrary number of task instances that can be deployed it could be challenging to read all of their streams into Rundeck output. Some support for that may be added in future.
+
+Nomad supports scheduling of [periodic](https://www.nomadproject.io/docs/job-specification/periodic.html) jobs and defining [restart](https://www.nomadproject.io/docs/job-specification/restart.html) policies, and also Nomad SDK implements [time-outs](https://github.com/hashicorp/nomad-java-sdk/blob/master/sdk/src/main/java/com/hashicorp/nomad/javasdk/WaitStrategy.java) and back-off strategy for all API calls. However, all of the above settings also belong to core functionality of Rundeck. Therefore, in order to avoid confusion, it was decided to delegate them to Rundeck job-level configuration. That is why API calls are configured to wait indefinitely and _periodic_ stanza from Nomad job specification is not supported. It may be implemented in future, if this plugin is enhanced to be able to deploy long running services.
 
 ![Alt Screenshot](/images/log.png)
-
-## Adding a new driver
-To add support for a new task driver, for example `jar` driver, follow these steps
-  * Create a subpackage e.g. `io.github.valfadeev.rundeck_nomad_plugin.driver.jar` and implement `JarPropertyComposer` (for UI fields) and `JarTaskConfigProvider` (for mapping onto task configuration). Please maintain the naming convention, because the plugin base class uses reflection to load the driver-specific classes. Using constants for configuration option keys is not necessary, but is highly recommended for easier debugging and refactoring.
-  * Add new value to `SupportedDrivers`
-  * Create new class `NomadJarStepPlugin` in the package root extending `NomadStepPlugin` and annotate it with `@Plugin`, `@PluginDescription` and `@Driver`. Define static field `SERVICE_PROVIDER_NAME`. Rely on the `NomadDockerStepPlugin` as the example.
-  * Add the fully qualified class name to `ext.pluginClassNames` in `build.gradle`.
-  * Add tests
-  * Build the project (1 jar is enough for all driver-specific classes)
 
 ## Minimal version requirements
   * Java 1.8
