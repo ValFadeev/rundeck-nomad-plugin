@@ -5,7 +5,7 @@
 ## Purpose
 This is a [Workflow Step](http://rundeck.org/docs/developer/workflow-step-plugin.html) plugin for submitting jobs to a [Nomad](https://www.nomadproject.io/intro/index.html#what-is-nomad-) cluster via Rundeck UI. The plugin interacts with a Nomad server via HTTP API.
 
-Rundeck is a popular and well established automation tool. It features, besides other things, a rich customizable UI, role-based access control, scheduling, logging, alerts, cli and API support and an already extensive plugin ecosystem. It fits well into the CI/CD pipelines (for instance, there is a [Jenkins](http://rundeck.org/plugins/2013/01/01/jenkins-rundeck.html) Rundeck integration plugin). Rundeck itself [does not](http://rundeck.org/docs/administration/scaling-rundeck.html) lend itself easily to running in HA mode or scaling worker nodes. Therefore, it seems a good idea put a distributed scheduler such as Nomad behind it to offload resource-intensive jobs.
+Rundeck is a popular and well established automation tool. It features, besides other things, a rich customizable UI, role-based access control, scheduling, logging, alerts, cli and API support and an already extensive plugin ecosystem. It fits well into the CI/CD pipelines (for instance, there is a [Jenkins](http://rundeck.org/plugins/2013/01/01/jenkins-rundeck.html) Rundeck integration plugin). Rundeck [does not](http://rundeck.org/docs/administration/scaling-rundeck.html) lend itself easily to running in HA mode or scaling worker nodes. Therefore, it seems a good idea put a distributed scheduler such as Nomad behind it to offload resource-intensive jobs.
 
 ![Alt Screenshot](/images/job.png)
 
