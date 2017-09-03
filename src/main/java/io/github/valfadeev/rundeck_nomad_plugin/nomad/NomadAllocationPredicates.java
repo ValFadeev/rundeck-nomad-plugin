@@ -7,6 +7,10 @@ import com.hashicorp.nomad.javasdk.Predicate;
 
 
 public abstract class NomadAllocationPredicates {
+
+    private static final String CLIENT_STATUS_COMPLETE = "complete";
+    private static final String CLIENT_STATUS_FAILED = "failed";
+
     /**
      * Returns a predicate that is true when either of the given predicates is true.
      */
@@ -19,11 +23,11 @@ public abstract class NomadAllocationPredicates {
     }
 
     public static Predicate<AllocationListStub> allocationHasCompleted() {
-        return allocationHasClientStatus("complete");
+        return allocationHasClientStatus(CLIENT_STATUS_COMPLETE);
     }
 
     public static Predicate<AllocationListStub> allocationHasFailed() {
-        return allocationHasClientStatus("failed");
+        return allocationHasClientStatus(CLIENT_STATUS_FAILED);
     }
 
     public static Predicate<AllocationListStub> allocationFinishedRunning() {
