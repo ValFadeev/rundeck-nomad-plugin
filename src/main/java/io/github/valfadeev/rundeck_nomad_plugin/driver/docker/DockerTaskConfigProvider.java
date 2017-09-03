@@ -13,12 +13,12 @@ import static io.github.valfadeev.rundeck_nomad_plugin.driver.docker.DockerConfi
 public class DockerTaskConfigProvider implements TaskConfigProvider {
 
     private Map<String, Object> configuration;
-    
+
     public DockerTaskConfigProvider(Map<String, Object> configuration) {
         this.configuration = configuration;
     }
 
-    public Map<String, Object> getConfig(Map<String, Object> configuration) {
+    public Map<String, Object> getConfig() {
 
         Map<String, Object> taskConfig = new HashMap<>();
 
