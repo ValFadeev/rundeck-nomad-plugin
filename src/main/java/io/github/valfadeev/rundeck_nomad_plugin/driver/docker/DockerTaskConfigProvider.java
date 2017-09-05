@@ -175,7 +175,7 @@ public class DockerTaskConfigProvider implements TaskConfigProvider {
         }
 
         if (!dockerPortMapString.isEmpty()) {
-            List<Map<String, String >> portMapList = new ArrayList<>();
+            List<Map<String, String>> portMapList = new ArrayList<>();
             portMapList.add(ParseInput.kvToMap(dockerPortMapString));
             taskConfig.put("port_map", portMapList);
         }

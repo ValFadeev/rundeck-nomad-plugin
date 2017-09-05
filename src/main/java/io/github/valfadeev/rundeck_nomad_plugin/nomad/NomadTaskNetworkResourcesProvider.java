@@ -42,7 +42,8 @@ public class NomadTaskNetworkResourcesProvider {
                 .get(NOMAD_RESERVED_PORTS)
                 .toString();
         if (!reservedPortString.isEmpty()) {
-            List<Port> reservedPorts = ParseInput.kvToMap(reservedPortString)
+            List<Port> reservedPorts = ParseInput
+                    .kvToMap(reservedPortString)
                     .entrySet()
                     .stream()
                     .map(m -> new Port()
