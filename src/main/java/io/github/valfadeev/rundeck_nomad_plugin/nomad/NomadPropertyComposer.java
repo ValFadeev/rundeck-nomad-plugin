@@ -47,6 +47,17 @@ public class NomadPropertyComposer extends PropertyComposer {
                         .build()
                 )
                 .property(PropertyBuilder.builder()
+                        .select(NOMAD_JOB_TYPE)
+                        .title("Type of job")
+                        .description("Specifies the Nomad scheduler to use.")
+                        .required(true)
+                        .values("batch",
+                                "service"
+                        )
+                        .defaultValue("batch")
+                        .build()
+                )
+                .property(PropertyBuilder.builder()
                         .longType(NOMAD_MAX_FAIL_PCT)
                         .title("Max allowed failed instances, %")
                         .description("Maximum number of job allocations allowed to fail")
