@@ -11,7 +11,8 @@ public class ParseInput {
             return result;
         } else {
             throw new IllegalArgumentException(
-                    String.format("valid input must be a string delimited by \"%s\", got: \"%s\"",
+                    String.format("valid input must be a string "
+                                + "delimited by \"%s\", got: \"%s\"",
                             delimiter, input));
         }
 

@@ -10,6 +10,10 @@ public class PropertyComposer {
         this.builder = DescriptionBuilder.builder();
     }
 
+    protected DescriptionBuilder addProperties(DescriptionBuilder builder) {
+        return builder;
+    }
+
     public DescriptionBuilder getBuilder() {
         return this.addProperties(builder);
     }
@@ -17,9 +21,5 @@ public class PropertyComposer {
     public PropertyComposer compose(PropertyComposer other) {
         this.builder = other.getBuilder();
         return this;
-    }
-
-    protected DescriptionBuilder addProperties(DescriptionBuilder builder) {
-        return builder;
     }
 }

@@ -55,7 +55,8 @@ public abstract class NomadStepPlugin implements StepPlugin, Describable {
                             String.format("%s.driver.%s.%sPropertyComposer",
                                     this.getClass().getPackage().getName(),
                                     driverName.toLowerCase(),
-                                    driverName)).newInstance();
+                                    driverName))
+                            .newInstance();
             PropertyComposer nomadPropertyComposer = new NomadPropertyComposer();
             return driverPropertyComposer
                     .compose(nomadPropertyComposer)
@@ -172,8 +173,9 @@ public abstract class NomadStepPlugin implements StepPlugin, Describable {
             eval.getFailedTgAllocs()
                     .get(TASK_GROUP_RUNDECK)
                     .getDimensionExhausted()
+                    .keySet()
                     .forEach(
-                    (k, v) -> logger.log(0,
+                    k -> logger.log(0,
                             String.format("Evaluation blocked due to %s", k)));
             throw new StepException(
                     String.format("Error while processing evaluation: %s", evalId),
