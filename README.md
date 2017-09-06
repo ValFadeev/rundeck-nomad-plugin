@@ -25,7 +25,7 @@ Download [Nomad](https://www.nomadproject.io/docs/agent/index.html#running-an-ag
 In Rundeck UI create a new project and a new job in that project. Under _"Add a Step"_ section swich to _"Workflow Steps"_ tab. If the plugin was recognized successfully, you should see _"Run Docker container on Nomad"_ in the list of the available workflow step plugins. Click on the plugin entry to bring up the input form, fill in Nomad agent URL, docker image name and any other available fields. Save and run the job.
 
 ## What is in scope
-Currently the scope is limited to [batch](https://www.nomadproject.io/docs/runtime/schedulers.html#batch) jobs of simple structure (1 job, 1 task group, 1 task). The reason is such jobs fit well into the Rundeck operating model and map onto the available UI configuration in a straightforward way. It is possible to set the task count within the task group thereby increasing parallelism where that matters.
+Currently the scope is limited to [batch](https://www.nomadproject.io/docs/runtime/schedulers.html#batch) and [service](https://www.nomadproject.io/docs/runtime/schedulers.html#service) jobs of simple structure (1 job, 1 task group, 1 task). The reason is such jobs fit well into the Rundeck operating model and map onto the available UI configuration in a straightforward way. It is possible to set the task count within the task group thereby increasing parallelism where that matters.
 
 Nomad supports a range of [Drivers](https://www.nomadproject.io/docs/drivers/index.html) to execute tasks. At the moment only Docker driver task configuration is supported by the plugin. However, best effort has been made to isolate driver-specific code and make the extension process simple.
 
