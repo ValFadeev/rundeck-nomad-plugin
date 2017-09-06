@@ -41,7 +41,6 @@ import static io.github.valfadeev.rundeck_nomad_plugin.nomad.NomadConfigOptions.
 
 public abstract class NomadStepPlugin implements StepPlugin, Describable {
 
-    private static final String JOB_TYPE_BATCH = "batch";
     private static final String TASK_GROUP_RUNDECK = "rundeck";
 
     private final String driverName = this.getClass().getAnnotation(Driver.class).name();
@@ -135,6 +134,8 @@ public abstract class NomadStepPlugin implements StepPlugin, Describable {
                     Reason.PluginInternalFailure);
         }
 
+        String jobType = configuration.get(NOMAD_JOB_TYPE).toString();
+
         Job job = NomadJobProvider.getJob(
                 configuration,
                 agentConfig,
@@ -142,8 +143,7 @@ public abstract class NomadStepPlugin implements StepPlugin, Describable {
                 driverName.toLowerCase(),
                 rundeckJobId,
                 rundeckJobName,
-                TASK_GROUP_RUNDECK,
-                JOB_TYPE_BATCH);
+                TASK_GROUP_RUNDECK);
 
         JobsApi jobsApi = apiClient.getJobsApi();
         String evalId;
@@ -182,8 +182,6 @@ public abstract class NomadStepPlugin implements StepPlugin, Describable {
                     String.format("Error while processing evaluation: %s", evalId),
                     Reason.EvalBlockedFailure);
         }
-
-        String jobType = configuration.get(NOMAD_JOB_TYPE).toString();
 
         if (jobType.equals("batch")) {
             logger.log(2, String.format("Evauation %s is complete, waiting for allocations", evalId));
