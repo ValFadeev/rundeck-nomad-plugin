@@ -6,51 +6,34 @@ import com.hashicorp.nomad.apimodel.AllocationListStub;
 import com.hashicorp.nomad.apimodel.Evaluation;
 import com.hashicorp.nomad.apimodel.Job;
 import com.hashicorp.nomad.javasdk.*;
-import io.github.valfadeev.rundeck_nomad_plugin.nomad.NomadJobProvider;
 
 import java.io.IOException;
-import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 import static com.hashicorp.nomad.javasdk.NomadPredicates.responseValue;
 import static io.github.valfadeev.rundeck_nomad_plugin.nomad.NomadAllocationPredicates.allAllocationsFinished;
 import static io.github.valfadeev.rundeck_nomad_plugin.nomad.NomadAllocationPredicates.either;
 import static io.github.valfadeev.rundeck_nomad_plugin.nomad.NomadAllocationPredicates.failedAllocationsOver;
-import static io.github.valfadeev.rundeck_nomad_plugin.nomad.NomadConfigOptions.NOMAD_MAX_FAIL_PCT;
-import static io.github.valfadeev.rundeck_nomad_plugin.nomad.NomadConfigOptions.NOMAD_URL;
 
-public class NomadStepExecutor {
+public class NomadJobExecutor {
 
+    private static final int LOG_LEVEL_ERROR = 0;
     private static final int LOG_LEVEL_INFO = 2;
 
-    private static final String JOB_TYPE_BATCH = "batch";
-    private static final String TASK_GROUP_RUNDECK = "rundeck";
-
     private final PluginLogger logger;
-    private final Map<String, String> rundeckJob;
-    private final Map<String, Object> stepConfiguration;
-    private final NomadApiClient apiClient;
     private final JobsApi jobsApi;
     private final EvaluationsApi evaluationsApi;
     private final long maxFailurePercentage;
 
-    public NomadStepExecutor(PluginLogger logger,
-                             Map<String, String> rundeckJob,
-                             Map<String, Object> stepConfiguration
-    ) {
+    //TODO: Wrap nomadUrl, maxFailurePercentage
+    public NomadJobExecutor(PluginLogger logger, NomadApiClient client, long maxFailurePercentage) {
         this.logger = logger;
-        this.rundeckJob = rundeckJob;
-        this.stepConfiguration = stepConfiguration;
-        this.apiClient = buildNomadApiClient();
-        this.jobsApi = apiClient.getJobsApi();
-        this.evaluationsApi = apiClient.getEvaluationsApi();
-        this.maxFailurePercentage = getMaxFailurePercentage();
+        this.jobsApi = client.getJobsApi();
+        this.evaluationsApi = client.getEvaluationsApi();
+        this.maxFailurePercentage = maxFailurePercentage;
     }
 
-    public void execute(String driverName, Map<String, Object> taskConfig) throws StepException {
-        info("Creating new job");
-        Job job = createNewJob(driverName, taskConfig);
+    public void execute(Job job) throws StepException {
         info("Registering job %s with Nomad", job.getId());
         String evaluationId = registerJob(job);
         info("Waiting for evaluation %s to complete...", evaluationId);
@@ -58,31 +41,6 @@ public class NomadStepExecutor {
         info("Evaluation %s is complete, waiting for allocations", evaluationId);
         ensureAllocationHealth(evaluationId);
         info("Job %s completed", job.getId());
-    }
-
-    private Job createNewJob(String driverName, Map<String, Object> taskConfig) throws StepException {
-        long ts = new Date().getTime();
-        // make job id and name unique for every run
-        // https://github.com/hashicorp/nomad/issues/2149
-        String jobId = createTimeStampedJobId(ts);
-        String jobName = createTimestampedJobName(ts);
-
-        try {
-            Map<String, Object> agentConfig = buildAgentConfig();
-
-            return NomadJobProvider.getJob(
-                    stepConfiguration,
-                    agentConfig,
-                    taskConfig,
-                    driverName,
-                    jobId,
-                    jobName,
-                    TASK_GROUP_RUNDECK,
-                    JOB_TYPE_BATCH);
-        } catch (NomadException | IOException e) {
-            throw new StepException("Error while getting agent configuration",
-                    NomadStepFailure.AgentConfigReadFailure);
-        }
     }
 
     private String registerJob(Job job) throws StepException {
@@ -107,13 +65,15 @@ public class NomadStepExecutor {
                     String.format("Error while polling for evaluation status: %s", evaluationId),
                     NomadStepFailure.EvalStatusPollFailure);
         }
+
         if (!evaluation.getBlockedEval().isEmpty()) {
-            evaluation.getFailedTgAllocs()
-                    .get(TASK_GROUP_RUNDECK)
-                    .getDimensionExhausted()
-                    .forEach(
-                    (k, v) -> logger.log(0,
-                            String.format("Evaluation blocked due to %s", k)));
+            evaluation
+                    .getFailedTgAllocs()
+                    .forEach((taskGroup, allocation) -> allocation
+                        .getDimensionExhausted()
+                        .forEach((dimension, v) -> {
+                            error("Evaluation blocked due to %s", dimension);
+                        }));
             throw new StepException(
                     String.format("Error while processing evaluation: %s", evaluation),
                     NomadStepFailure.EvalBlockedFailure);
@@ -149,39 +109,12 @@ public class NomadStepExecutor {
         }
     }
 
-    private NomadApiClient buildNomadApiClient() {
-        String nomadUrl = stepConfiguration.get(NOMAD_URL).toString();
-        NomadApiConfiguration config =
-                new NomadApiConfiguration
-                        .Builder()
-                        .setAddress(nomadUrl)
-                        .build();
-        return new NomadApiClient(config);
-    }
-
-    private Map<String, Object> buildAgentConfig() throws IOException, NomadException {
-        AgentApi agentApi = apiClient.getAgentApi();
-        return agentApi.self()
-                .getValue()
-                .getConfig();
-    }
-
-    private Long getMaxFailurePercentage() {
-        return Long.parseLong(stepConfiguration
-                        .get(NOMAD_MAX_FAIL_PCT)
-                        .toString());
-    }
-
-    private String createTimeStampedJobId(long ts) {
-        return String.format("%s-%s",rundeckJob.get("id"), ts);
-    }
-
-    private String createTimestampedJobName(long ts) {
-        return String.format("%s-%s", rundeckJob.get("name"), ts);
-    }
-
     private void info(String format, Object... args) {
         logger.log(LOG_LEVEL_INFO, String.format(format, args));
+    }
+
+    private void error(String format, Object... args) {
+        logger.log(LOG_LEVEL_ERROR, String.format(format, args));
 
     }
 }

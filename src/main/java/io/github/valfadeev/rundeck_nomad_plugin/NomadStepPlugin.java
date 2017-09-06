@@ -8,15 +8,23 @@ import com.dtolabs.rundeck.plugins.PluginLogger;
 import com.dtolabs.rundeck.plugins.descriptions.PluginDescription;
 import com.dtolabs.rundeck.plugins.step.PluginStepContext;
 import com.dtolabs.rundeck.plugins.step.StepPlugin;
+import com.hashicorp.nomad.apimodel.Job;
+import com.hashicorp.nomad.javasdk.NomadApiClient;
+import com.hashicorp.nomad.javasdk.NomadApiConfiguration;
 import io.github.valfadeev.rundeck_nomad_plugin.common.Driver;
 import io.github.valfadeev.rundeck_nomad_plugin.common.PropertyComposer;
 import io.github.valfadeev.rundeck_nomad_plugin.common.TaskConfigProvider;
 import io.github.valfadeev.rundeck_nomad_plugin.nomad.NomadPropertyComposer;
 
+import static io.github.valfadeev.rundeck_nomad_plugin.nomad.NomadConfigOptions.NOMAD_MAX_FAIL_PCT;
+import static io.github.valfadeev.rundeck_nomad_plugin.nomad.NomadConfigOptions.NOMAD_URL;
+
+
 import java.util.Map;
 
 public abstract class NomadStepPlugin implements StepPlugin, Describable {
 
+    public static final String RUNDECK_JOB_CONTEXT_KEY = "job";
     private final String driverName = this.getClass().getAnnotation(Driver.class).name();
     private final String serviceProviderName = this.getClass().getAnnotation(Plugin.class).name();
     private final String title = this.getClass().getAnnotation(PluginDescription.class).title();
@@ -41,10 +49,22 @@ public abstract class NomadStepPlugin implements StepPlugin, Describable {
 
     public void executeStep(final PluginStepContext context, final Map<String, Object> configuration) throws StepException {
         PluginLogger logger = context.getExecutionContext().getExecutionListener();
-        Map<String, String> rundeckJob = context.getDataContext().get("job");
+
+        String nomadUrl = configuration.get(NOMAD_URL).toString();
+        long maxFailurePercentage = Long.parseLong(configuration
+                .get(NOMAD_MAX_FAIL_PCT)
+                .toString());
+
+        NomadApiClient apiClient = buildNomadApiClient(nomadUrl);
+
+        Map<String, String> rundeckJob = context.getDataContext().get(RUNDECK_JOB_CONTEXT_KEY);
         Map<String, Object> taskConfig = buildTaskConfig(configuration);
-        NomadStepExecutor executor = new NomadStepExecutor(logger, rundeckJob, configuration);
-        executor.execute(driverName.toLowerCase(), taskConfig);
+
+        NomadRundeckJobBuilder builder = new NomadRundeckJobBuilder(driverName, apiClient, configuration);
+        NomadJobExecutor executor = new NomadJobExecutor(logger, apiClient, maxFailurePercentage);
+        Job job = builder.createJob(rundeckJob, taskConfig);
+
+        executor.execute(job);
     }
 
     private Map<String, Object> buildTaskConfig(Map<String, Object> configuration) throws StepException {
@@ -74,5 +94,14 @@ public abstract class NomadStepPlugin implements StepPlugin, Describable {
                 driverName.toLowerCase(),
                 driverName);
         return (PropertyComposer) Class.forName(className).newInstance();
+    }
+
+    private NomadApiClient buildNomadApiClient(String nomadUrl) {
+        NomadApiConfiguration config =
+                new NomadApiConfiguration
+                        .Builder()
+                        .setAddress(nomadUrl)
+                        .build();
+        return new NomadApiClient(config);
     }
 }
