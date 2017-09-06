@@ -22,6 +22,7 @@ public class NomadJobProviderTest {
                 .addItem(NOMAD_DATACENTER, "")
                 .addItem(NOMAD_REGION, "")
                 .addItem(NOMAD_GROUP_COUNT, "3")
+                .addItem(NOMAD_JOB_TYPE, "service")
                 .addItem(NOMAD_MAX_FAIL_PCT, "0")
                 .addItem(NOMAD_ENV_VARS, "FOO=BAR")
                 .addItem(NOMAD_TASK_CPU, "50")
@@ -46,15 +47,14 @@ public class NomadJobProviderTest {
                 "docker",
                 "testId",
                 "testName",
-                "rundeck",
-                "batch");
+                "rundeck");
 
         assertThat(job.getDatacenters(), is(Arrays.asList(new String[]{"dc1"})));
         assertThat(job.getId(), is("testId"));
         assertThat(job.getName(), is("testName"));
         assertThat(job.getTaskGroups().get(0).getName(), is("rundeck"));
-        assertThat(job.getType(), is("batch"));
         assertThat(job.getRegion(), is("global"));
+        assertThat(job.getType(), is("service"));
     }
 
 }

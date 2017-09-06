@@ -20,8 +20,7 @@ public class NomadJobProvider {
                              String driver,
                              String id,
                              String name,
-                             String taskGroupName,
-                             String jobType) {
+                             String taskGroupName) {
 
         Map<String, String> env = NomadTaskEnvProvider.getEnv(configuration);
         Resources resources = NomadTaskResourcesProvider.getResources(configuration);
@@ -58,6 +57,8 @@ public class NomadJobProvider {
         if (region.isEmpty()) {
             region = agentConfig.get("Region").toString();
         }
+
+        String jobType = configuration.get(NOMAD_JOB_TYPE).toString();
 
         return new Job()
                 .setId(id)

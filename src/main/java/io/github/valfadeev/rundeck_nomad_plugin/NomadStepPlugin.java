@@ -34,13 +34,13 @@ import static com.hashicorp.nomad.javasdk.NomadPredicates.responseValue;
 import static io.github.valfadeev.rundeck_nomad_plugin.nomad.NomadAllocationPredicates.allAllocationsFinished;
 import static io.github.valfadeev.rundeck_nomad_plugin.nomad.NomadAllocationPredicates.either;
 import static io.github.valfadeev.rundeck_nomad_plugin.nomad.NomadAllocationPredicates.failedAllocationsOver;
+import static io.github.valfadeev.rundeck_nomad_plugin.nomad.NomadConfigOptions.NOMAD_JOB_TYPE;
 import static io.github.valfadeev.rundeck_nomad_plugin.nomad.NomadConfigOptions.NOMAD_MAX_FAIL_PCT;
 import static io.github.valfadeev.rundeck_nomad_plugin.nomad.NomadConfigOptions.NOMAD_URL;
 
 
 public abstract class NomadStepPlugin implements StepPlugin, Describable {
 
-    private static final String JOB_TYPE_BATCH = "batch";
     private static final String TASK_GROUP_RUNDECK = "rundeck";
 
     private final String driverName = this.getClass().getAnnotation(Driver.class).name();
@@ -55,7 +55,8 @@ public abstract class NomadStepPlugin implements StepPlugin, Describable {
                             String.format("%s.driver.%s.%sPropertyComposer",
                                     this.getClass().getPackage().getName(),
                                     driverName.toLowerCase(),
-                                    driverName)).newInstance();
+                                    driverName))
+                            .newInstance();
             PropertyComposer nomadPropertyComposer = new NomadPropertyComposer();
             return driverPropertyComposer
                     .compose(nomadPropertyComposer)
@@ -75,11 +76,12 @@ public abstract class NomadStepPlugin implements StepPlugin, Describable {
      */
     static enum Reason implements FailureReason{
         AgentConfigReadFailure,
-        AllocMaxFailExceeded,
+        AllocMaxFailExceededFailure,
+        AllocStatusFailure,
         EvalBlockedFailure,
         EvalStatusPollFailure,
         JobRegistrationFailure,
-        AllocStatusFailure,
+        InvalidJobTypeFailure,
         PluginInternalFailure
     }
 
@@ -132,6 +134,8 @@ public abstract class NomadStepPlugin implements StepPlugin, Describable {
                     Reason.PluginInternalFailure);
         }
 
+        String jobType = configuration.get(NOMAD_JOB_TYPE).toString();
+
         Job job = NomadJobProvider.getJob(
                 configuration,
                 agentConfig,
@@ -139,8 +143,7 @@ public abstract class NomadStepPlugin implements StepPlugin, Describable {
                 driverName.toLowerCase(),
                 rundeckJobId,
                 rundeckJobName,
-                TASK_GROUP_RUNDECK,
-                JOB_TYPE_BATCH);
+                TASK_GROUP_RUNDECK);
 
         JobsApi jobsApi = apiClient.getJobsApi();
         String evalId;
@@ -166,54 +169,62 @@ public abstract class NomadStepPlugin implements StepPlugin, Describable {
                     String.format("Error while polling for evaluation status: %s", evalId),
                     Reason.EvalStatusPollFailure);
         }
-        logger.log(2, String.format("Evauation %s is complete, waiting for allocations", evalId));
 
         if (!eval.getBlockedEval().isEmpty()) {
             eval.getFailedTgAllocs()
                     .get(TASK_GROUP_RUNDECK)
                     .getDimensionExhausted()
+                    .keySet()
                     .forEach(
-                    (k, v) -> logger.log(0,
+                    k -> logger.log(0,
                             String.format("Evaluation blocked due to %s", k)));
             throw new StepException(
                     String.format("Error while processing evaluation: %s", evalId),
                     Reason.EvalBlockedFailure);
         }
 
-        // poll for allocation status; bail out if
-        // the number of failed allocations exceeds
-        // the threshold
-        Long maxFailPct = Long.parseLong(
-                configuration
-                        .get(NOMAD_MAX_FAIL_PCT)
-                        .toString());
+        if (jobType.equals("batch")) {
+            logger.log(2, String.format("Evauation %s is complete, waiting for allocations", evalId));
+            // if job type is "batch"
+            // poll for allocation status; bail out if
+            // the number of failed allocations exceeds
+            // the threshold
+            Long maxFailPct = Long.parseLong(
+                    configuration
+                            .get(NOMAD_MAX_FAIL_PCT)
+                            .toString());
 
-        List<AllocationListStub> allocs;
-        try {
-            allocs = evaluationsApi
-                    .allocations(evalId,
-                            QueryOptions
-                                    .pollRepeatedlyUntil(responseValue(
-                                    either(allAllocationsFinished(),
-                                           failedAllocationsOver(maxFailPct))),
-                            WaitStrategy.WAIT_INDEFINITELY)) // timeout should be set in Rundeck
-                    .getValue();
-        } catch (IOException|NomadException e) {
-            throw new StepException(
-                    "Error while polling for allocation status",
-                    Reason.AllocStatusFailure);
+            List<AllocationListStub> allocs;
+            try {
+                allocs = evaluationsApi
+                        .allocations(evalId,
+                                QueryOptions
+                                        .pollRepeatedlyUntil(responseValue(
+                                                either(allAllocationsFinished(),
+                                                        failedAllocationsOver(maxFailPct))),
+                                                WaitStrategy.WAIT_INDEFINITELY)) // timeout should be set in Rundeck
+                        .getValue();
+            }
+            catch (IOException | NomadException e) {
+                throw new StepException(
+                        "Error while polling for allocation status",
+                        Reason.AllocStatusFailure);
+            }
+
+            allocs.forEach(a -> logger.log(2,
+                    String.format("allocation %s on node %s: %s",
+                            a.getId(),
+                            a.getNodeId(),
+                            a.getClientStatus())));
+
+            if (failedAllocationsOver(maxFailPct).apply(allocs)) {
+                throw new StepException("Too many allocations failed", Reason.AllocMaxFailExceededFailure);
+            }
+
+        } else if (!jobType.equals("service")) {
+            throw new StepException(String.format("Unknown job type: %s", jobType), Reason.InvalidJobTypeFailure);
         }
 
-        allocs.forEach(a -> logger.log(2,
-                String.format("allocation %s on node %s: %s",
-                        a.getId(),
-                        a.getNodeId(),
-                        a.getClientStatus())));
-
-        if (failedAllocationsOver(maxFailPct).apply(allocs)) {
-            throw new StepException("Too many allocations failed", Reason.AllocMaxFailExceeded);
-        } else {
-            logger.log(2, String.format("Job %s completed", rundeckJobName));
-        }
+        logger.log(2, String.format("Job %s completed", rundeckJobName));
     }
 }
