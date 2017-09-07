@@ -24,7 +24,7 @@ import java.util.Map;
 
 public abstract class NomadStepPlugin implements StepPlugin, Describable {
 
-    public static final String RUNDECK_JOB_CONTEXT_KEY = "job";
+    private static final String RUNDECK_JOB_CONTEXT_KEY = "job";
     private final String driverName = this.getClass().getAnnotation(Driver.class).name();
     private final String serviceProviderName = this.getClass().getAnnotation(Plugin.class).name();
     private final String title = this.getClass().getAnnotation(PluginDescription.class).title();
@@ -48,23 +48,31 @@ public abstract class NomadStepPlugin implements StepPlugin, Describable {
     }
 
     public void executeStep(final PluginStepContext context, final Map<String, Object> configuration) throws StepException {
-        PluginLogger logger = context.getExecutionContext().getExecutionListener();
+        //TODO: Create a wrapper around configuration that gives us the things we want
+        // Build nomad job execution context
+        PluginLogger pluginLogger = context.getExecutionContext().getExecutionListener();
+        StepLogger logger = new StepLogger(pluginLogger);
 
         String nomadUrl = configuration.get(NOMAD_URL).toString();
-        long maxFailurePercentage = Long.parseLong(configuration
-                .get(NOMAD_MAX_FAIL_PCT)
-                .toString());
-
+        long maxFailurePercentage = getMaximumFailurePercentage(configuration);
         NomadApiClient apiClient = buildNomadApiClient(nomadUrl);
+        JobLauncher launcher = new JobLauncher(logger, apiClient, maxFailurePercentage);
 
         Map<String, String> rundeckJob = context.getDataContext().get(RUNDECK_JOB_CONTEXT_KEY);
         Map<String, Object> taskConfig = buildTaskConfig(configuration);
 
         NomadRundeckJobBuilder builder = new NomadRundeckJobBuilder(driverName, apiClient, configuration);
-        NomadJobExecutor executor = new NomadJobExecutor(logger, apiClient, maxFailurePercentage);
-        Job job = builder.createJob(rundeckJob, taskConfig);
 
-        executor.execute(job);
+        //Execute
+        logger.info("Creating job");
+        Job job = builder.createJob(rundeckJob, taskConfig);
+        logger.info("Registering job %s with Nomad", job.getId());
+        String evaluationId = launcher.registerJob(job);
+        logger.info("Waiting for evaluation %s to complete...", evaluationId);
+        launcher.waitForEvaluation(evaluationId);
+        logger.info("Evaluation %s is complete, waiting for allocations", evaluationId);
+        launcher.ensureAllocationHealth(evaluationId);
+        logger.info("Job %s completed", job.getId());
     }
 
     private Map<String, Object> buildTaskConfig(Map<String, Object> configuration) throws StepException {
@@ -103,5 +111,11 @@ public abstract class NomadStepPlugin implements StepPlugin, Describable {
                         .setAddress(nomadUrl)
                         .build();
         return new NomadApiClient(config);
+    }
+
+    private long getMaximumFailurePercentage(Map<String, Object> configuration) {
+        return Long.parseLong(configuration
+                .get(NOMAD_MAX_FAIL_PCT)
+                .toString());
     }
 }
