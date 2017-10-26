@@ -71,8 +71,8 @@ task copyToLib(type: Copy) {
 }
 
 ext.pluginClassNames=[
-        'io.github.valfadeev.rundeck_nomad_plugin.NomadDockerStepPlugin',
-        'io.github.valfadeev.rundeck_nomad_plugin.NomadJavaStepPlugin'
+        'io.github.valfadeev.rundeck.plugin.nomad.NomadDockerStepPlugin',
+        'io.github.valfadeev.rundeck.plugin.nomad.NomadJavaStepPlugin'
 ].join(",")
 
 jar {
