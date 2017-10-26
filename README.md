@@ -44,7 +44,6 @@ Nomad supports scheduling of [periodic](https://www.nomadproject.io/docs/job-spe
   * Nomad 0.6.0
 
 ## Similar projects
-As Nomad gains popularity a number of projects providing UI for visual cluster management or using Nomad as a backend for job scheduling already exist:
   * [cvandal/nomad-ui](https://github.com/cvandal/nomad-ui) - UI for Nomad by HashiCorp.
   * [jippi/hashi-ui](https://github.com/jippi/hashi-ui) - UI for Nomad and [Consul](https://www.consul.io/docs/index.html).
   * [FRosner/cluster-broccoli](https://github.com/FRosner/cluster-broccoli) - templated UI for configuring jobs.
