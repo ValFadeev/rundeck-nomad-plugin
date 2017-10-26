@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.hashicorp.nomad.apimodel.Job;
-import org.hamcrest.core.StringContains;
 import org.junit.Test;
 import utils.TestConfigurationMapBuilder;
 
@@ -31,6 +30,13 @@ public class NomadJobProviderTest {
                 .addItem(NOMAD_NETWORK_BANDWIDTH, "10")
                 .addItem(NOMAD_DYNAMIC_PORTS, "http,https")
                 .addItem(NOMAD_RESERVED_PORTS, "amqp=5672\ndb=6379")
+                .addItem(NOMAD_MAX_PARALLEL, "1")
+                .addItem(NOMAD_HEALTH_CHECK, "")
+                .addItem(NOMAD_MIN_HEALTHY_TIME, "")
+                .addItem(NOMAD_HEALTHY_DEADLINE, "")
+                .addItem(NOMAD_AUTO_REVERT, "")
+                .addItem(NOMAD_CANARY, "")
+                .addItem(NOMAD_STAGGER, "")
                 .getConfig();
 
         final Map<String, Object> agentConfig = new HashMap<>();
@@ -55,6 +61,7 @@ public class NomadJobProviderTest {
         assertThat(job.getTaskGroups().get(0).getName(), is("rundeck"));
         assertThat(job.getRegion(), is("global"));
         assertThat(job.getType(), is("service"));
+        assertThat(job.getUpdate().getMaxParallel(), is(1));
     }
 
 }

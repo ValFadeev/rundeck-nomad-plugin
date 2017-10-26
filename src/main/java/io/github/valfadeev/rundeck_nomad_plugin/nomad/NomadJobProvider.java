@@ -9,6 +9,7 @@ import com.hashicorp.nomad.apimodel.Job;
 import com.hashicorp.nomad.apimodel.Resources;
 import com.hashicorp.nomad.apimodel.Task;
 import com.hashicorp.nomad.apimodel.TaskGroup;
+import com.hashicorp.nomad.apimodel.UpdateStrategy;
 
 import static io.github.valfadeev.rundeck_nomad_plugin.nomad.NomadConfigOptions.*;
 
@@ -60,12 +61,15 @@ public class NomadJobProvider {
 
         String jobType = configuration.get(NOMAD_JOB_TYPE).toString();
 
+        UpdateStrategy update = NomadUpdateStrategyProvider.getUpdate(configuration);
+
         return new Job()
                 .setId(id)
                 .setName(name)
                 .setType(jobType)
                 .setDatacenters(datacenters)
                 .setRegion(region)
-                .addTaskGroups(group);
+                .addTaskGroups(group)
+                .setUpdate(update);
     }
 }

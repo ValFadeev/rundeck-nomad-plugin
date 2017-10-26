@@ -14,4 +14,12 @@ public class NomadConfigOptions {
     public static final String NOMAD_TASK_MEMORY = "nomad_task_memory";
     public static final String NOMAD_TASK_IOPS = "nomad_task_iops";
     public static final String NOMAD_NETWORK_BANDWIDTH = "nomad_network_bandwidth";
+    public static final String NOMAD_MAX_PARALLEL = "nomad_max_parallel";
+    public static final String NOMAD_HEALTH_CHECK = "nomad_health_check";
+    public static final String NOMAD_MIN_HEALTHY_TIME = "nomad_min_healthy_time";
+    public static final String NOMAD_HEALTHY_DEADLINE = "nomad_healthy_deadline";
+    public static final String NOMAD_AUTO_REVERT = "nomad_auto_revert";
+    public static final String NOMAD_CANARY = "nomad_canary";
+    public static final String NOMAD_STAGGER = "nomad_stagger";
+
 }
