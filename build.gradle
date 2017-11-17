@@ -29,11 +29,11 @@ repositories {
 dependencies {
     compile(
             [group: 'org.rundeck', name: 'rundeck-core', version: version, ext: 'jar'],
-            [group: 'com.hashicorp.nomad', name: 'nomad-sdk', version: '0.6.3', ext: 'jar']
+            [group: 'com.hashicorp.nomad', name: 'nomad-sdk', version: '0.7.0', ext: 'jar']
     )
 
     pluginLibs(
-            [group: 'com.hashicorp.nomad', name: 'nomad-sdk', version: '0.6.3', ext: 'jar'],
+            [group: 'com.hashicorp.nomad', name: 'nomad-sdk', version: '0.7.0', ext: 'jar'],
             [group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.3']
     )
 
@@ -41,7 +41,7 @@ dependencies {
             [group: 'junit', name: 'junit', version: '4.12', ext: 'jar'],
             [group: 'org.hamcrest', name: 'hamcrest-core', version: '1.3', ext: 'jar'],
             [group: 'org.hamcrest', name: 'hamcrest-library', version: '1.3', ext: 'jar'],
-            [group: 'com.hashicorp.nomad', name: 'nomad-sdk', version: '0.6.3', ext: 'jar'],
+            [group: 'com.hashicorp.nomad', name: 'nomad-sdk', version: '0.7.0', ext: 'jar'],
             [group: 'org.jbundle.util.osgi.wrapped', name: 'org.jbundle.util.osgi.wrapped.org.apache.http.client', version: '4.1.2']
 
 
