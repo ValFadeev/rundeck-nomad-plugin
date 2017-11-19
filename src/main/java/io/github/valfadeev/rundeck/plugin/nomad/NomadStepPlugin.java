@@ -28,10 +28,12 @@ import com.hashicorp.nomad.javasdk.WaitStrategy;
 import io.github.valfadeev.rundeck.plugin.nomad.common.Driver;
 import io.github.valfadeev.rundeck.plugin.nomad.common.PropertyComposer;
 import io.github.valfadeev.rundeck.plugin.nomad.common.TaskConfigProvider;
-import io.github.valfadeev.rundeck.plugin.nomad.nomad.NomadAllocationPredicates;
 import io.github.valfadeev.rundeck.plugin.nomad.nomad.NomadConfigOptions;
 import io.github.valfadeev.rundeck.plugin.nomad.nomad.NomadJobProvider;
 import io.github.valfadeev.rundeck.plugin.nomad.nomad.NomadPropertyComposer;
+import static io.github.valfadeev.rundeck.plugin.nomad.nomad.NomadAllocationPredicates.either;
+import static io.github.valfadeev.rundeck.plugin.nomad.nomad.NomadAllocationPredicates.failedAllocationsOver;
+import static io.github.valfadeev.rundeck.plugin.nomad.nomad.NomadAllocationPredicates.allAllocationsFinished;
 
 import static com.hashicorp.nomad.javasdk.NomadPredicates.responseValue;
 
@@ -180,7 +182,8 @@ public abstract class NomadStepPlugin implements StepPlugin, Describable {
         }
 
         if (jobType.equals("batch")) {
-            logger.log(2, String.format("Evauation %s is complete, waiting for allocations", evalId));
+            logger.log(2, String.format("Evauation %s is complete, "
+                    + "waiting for allocations", evalId));
             // if job type is "batch"
             // poll for allocation status; bail out if
             // the number of failed allocations exceeds
@@ -188,18 +191,22 @@ public abstract class NomadStepPlugin implements StepPlugin, Describable {
             Long maxFailPct = Long.parseLong(
                     configuration
                             .get(NomadConfigOptions.NOMAD_MAX_FAIL_PCT)
-                            .toString());
+                            .toString()
+            );
 
             List<AllocationListStub> allocs;
             try {
-                allocs = evaluationsApi
-                        .allocations(evalId,
-                                QueryOptions
-                                        .pollRepeatedlyUntil(responseValue(
-                                                NomadAllocationPredicates.either(NomadAllocationPredicates.allAllocationsFinished(),
-                                                        NomadAllocationPredicates.failedAllocationsOver(maxFailPct))),
-                                                WaitStrategy.WAIT_INDEFINITELY)) // timeout should be set in Rundeck
-                        .getValue();
+                allocs = evaluationsApi.allocations(
+                        evalId,
+                        QueryOptions.pollRepeatedlyUntil(
+                                responseValue(
+                                        either(allAllocationsFinished(),
+                                                failedAllocationsOver(maxFailPct)
+                                        )
+                                ),
+                                // timeout should be set in Rundeck
+                                WaitStrategy.WAIT_INDEFINITELY)
+                ).getValue();
             }
             catch (IOException | NomadException e) {
                 throw new StepException(
@@ -213,12 +220,14 @@ public abstract class NomadStepPlugin implements StepPlugin, Describable {
                             a.getNodeId(),
                             a.getClientStatus())));
 
-            if (NomadAllocationPredicates.failedAllocationsOver(maxFailPct).apply(allocs)) {
-                throw new StepException("Too many allocations failed", Reason.AllocMaxFailExceededFailure);
+            if (failedAllocationsOver(maxFailPct).apply(allocs)) {
+                throw new StepException("Too many allocations failed",
+                        Reason.AllocMaxFailExceededFailure);
             }
 
         } else if (!jobType.equals("service")) {
-            throw new StepException(String.format("Unknown job type: %s", jobType), Reason.InvalidJobTypeFailure);
+            throw new StepException(String.format("Unknown job type: %s", jobType),
+                    Reason.InvalidJobTypeFailure);
         }
 
         logger.log(2, String.format("Job %s completed", rundeckJobName));
