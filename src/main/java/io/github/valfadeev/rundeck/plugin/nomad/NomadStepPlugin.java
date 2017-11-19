@@ -88,7 +88,7 @@ public abstract class NomadStepPlugin implements StepPlugin, Describable {
         // make job id and name unique for every run
         // https://github.com/hashicorp/nomad/issues/2149
         long ts = new Date().getTime();
-        Map<String, String> rundeckJob = context.getDataContext().get("job");
+        Map<String, String> rundeckJob = context.getDataContextObject().get("job");
         String rundeckJobId = String.format("%s-%s",rundeckJob.get("id"), ts);
         String rundeckJobName = String.format("%s-%s", rundeckJob.get("name"), ts);
 
