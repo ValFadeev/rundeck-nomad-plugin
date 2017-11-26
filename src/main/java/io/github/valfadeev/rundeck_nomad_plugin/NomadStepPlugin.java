@@ -48,7 +48,6 @@ public abstract class NomadStepPlugin implements StepPlugin, Describable {
     }
 
     public void executeStep(final PluginStepContext context, final Map<String, Object> configuration) throws StepException {
-        //TODO: Create a wrapper around configuration that gives us the things we want
         // Build nomad job execution context
         PluginLogger pluginLogger = context.getExecutionContext().getExecutionListener();
         StepLogger logger = new StepLogger(pluginLogger);

@@ -4,7 +4,6 @@ import com.dtolabs.rundeck.plugins.PluginLogger;
 
 public class StepLogger {
 
-    //TODO: Can this implement a standard logging api that also has a noop implementation
     private static final int LOG_LEVEL_ERROR = 0;
     private static final int LOG_LEVEL_INFO = 2;
 
